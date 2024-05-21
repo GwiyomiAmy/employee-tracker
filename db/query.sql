@@ -1,16 +1,14 @@
 SELECT 
    employees.id, 
-   employees.firstName, 
-   employees.lastName, 
-   roles.title, 
-   departments.dept_name, 
-   roles.salary, 
-   CONCAT(manager.firstName+ " " + manager.lastName)
+   employees.first_name AS firstName, 
+   employees.last_name AS lastName, 
+   employees.employee_title AS title
+   CONCAT (manager.first_name+ " " + manager.last_name) AS manager
 FROM employees
 LEFT JOIN roles ON roles.id = employees.id
 LEFT JOIN departments ON department.dept_name = role.department
--- JOIN employees AS manager ON employee.manager = manager
+LEFT JOIN employees AS manager ON employee.manager = manager.id
 
 
-FOREIGN KEY (role_id) REFERENCES role(id) on DELETE CASCADE, manager_id INTEGER
-FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL
+-- FOREIGN KEY (role_id) REFERENCES role(id) on DELETE CASCADE
+-- FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL

@@ -2,8 +2,6 @@ const express = require('express');
 const { Pool } = require('pg');
 const inquirer = require("inquirer");
 
-
-const PORT = process.env.PORT || 3001;
 const app = express();
 
 // Express middleware
@@ -15,9 +13,9 @@ const pool = new Pool(
     user: 'postgres',
     password: '12345',
     host: 'localhost',
-    database: 'movies_db'
+    database: 'employees_db'
   },
-  console.log(`Connected to the movies_db database.`)
+  console.log(`Connected to the employees_db database.`)
 )
 
 pool.connect();
@@ -130,6 +128,7 @@ const displayRoles = function() {
         message: 'success',
         data: rows
       });
+      askQuestions();
     });
   });
 };
@@ -150,6 +149,7 @@ const displayDepts = function() {
         message: 'success',
         data: rows
       });
+      askQuestions();
     });
   });
 };
@@ -169,6 +169,7 @@ const displayEmployees = function(){
         message: 'success',
         data: rows
       });
+      askQuestions();
     });
   });
 };
@@ -189,7 +190,9 @@ const postRoles = function() {
       message: 'Added role to the database',
       data: body
      });
+     askQuestions();
    });
+
  });
 };
 
@@ -209,6 +212,7 @@ const postDept = function() {
         message: 'Added department to the database',
         data: body
       });
+      askQuestions();
     });
   });
 };
@@ -229,6 +233,7 @@ const postEmp = function() {
         message: 'Added employee to the database',
         data: body
       });
+      askQuestions();
     });
   });
 };
@@ -252,6 +257,7 @@ const putEmp = function() {
           data: req.body,
           changes: result.rowCount
         });
+        askQuestions();
       }
     });
   });
@@ -261,26 +267,29 @@ function askQuestions() {
   inquirer.prompt(menu).then((response) => {
     if(response.first === "View All Roles") {
       displayRoles();
+      askQuestions();
     } else if(response.first === "View All Departments") {
       displayDepts();
+      askQuestions();
     } else if (response.first === "View All Employees") {
       displayEmployees();
+      askQuestions();
     } else if (response.first === "Add Role") {
       inquirer.prompt(addRole).then((response) => {
         postRoles(response);
-      });
+      }); 
     } else if(response.first === "Add Department") {
       inquirer.prompt(addDept).then((response) => {
         postDept(response);
-      })
+      }); 
     } else if(response.first === "Add Employee") {
       inquirer.prompt(addEmp).then((response) => {
         postEmp(response);
-      })
+      }); 
     } else if(response.first === "Update Employee Role") {
       inquirer.prompt(updateEmp).then((response) => {
         putEmp(response);
-      })
+      }); 
     } else if(response.first === "Quit") {
       inquirer.prompt.ui.close();
     } else {
