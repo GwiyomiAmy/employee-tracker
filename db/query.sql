@@ -1,15 +1,16 @@
--- SELECT movies.movie_name AS movie, reviews.review
--- FROM reviews
--- LEFT JOIN movies
--- ON reviews.movie_id = movies.id
--- ORDER BY movies.movie_name;
+SELECT 
+   employees.id, 
+   employees.firstName, 
+   employees.lastName, 
+   roles.title, 
+   departments.dept_name, 
+   roles.salary, 
+   CONCAT(manager.firstName+ " " + manager.lastName)
+FROM employees
+LEFT JOIN roles ON roles.id = employees.id
+LEFT JOIN departments ON department.dept_name = role.department
+-- JOIN employees AS manager ON employee.manager = manager
 
 
-SELECT employees.id, employee.firstName, employee.lastName, role.title, department.name, role.salary, manager.lastName
-FROM employee
-JOIN role ON employee.role_id = role.id
-JOIN department ON department.id = role.department_id
-JOIN employee AS manager ON employee.manager_id = manager.id
-
-CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role(id) on DELETE CASCADE, manager_id INTEGER
-CONSTRAINT fk_manager FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE DET NULL
+FOREIGN KEY (role_id) REFERENCES role(id) on DELETE CASCADE, manager_id INTEGER
+FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL
