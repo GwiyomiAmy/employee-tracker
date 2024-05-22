@@ -91,7 +91,7 @@ const addEmpQs =
    type:"list",
    message: "Who is the employee's manager?",
    name: "manager",
-   choices: ["None", ] //GET from employee/manager db
+   choices: [ ] //GET from employee/manager db
 }
 ];
 
@@ -275,19 +275,46 @@ const postEmp = function(response) {
     });
   };
 
+const updateEmp = function(){
+  updateEmpQs[0].choices = [];
+  const sql = `SELECT * FROM employees`;
+  pool.query(sql, (err, response) => {
+    if (err) {
+      console.log(err.message);
+      return;
+    }
+    const emp_table = response.rows;
+    let emps  = [];
+    for (let i = 0; i < emp_table.length; i++) {
+      emps[i] = emp_table[i].fname, emp_table[i].lname;
+    }
+    addEmpQs[2].choices = emps;
+    inquirer.prompt(addEmpQs).then((response) => {
+      //console.log(response);
+      
+      for (let i = 0; i < emp_table.length; i++) {
+        if(response.empRole = emp_table[i].title) {
+          response.empRole = emp_table[i].id;
+          break;
+        }
+      }
+      postEmp(response);
+    }); 
+  });
+};
+
 // PUT to employees table
 const putEmp = function() {
-  app.put('/api/employee/:id', (req, res) => {
     const sql = `UPDATE employees SET employee = $1 WHERE id = $2`;
     const params = [req.body];
   
     pool.query(sql, params, (err, result) => {
       if (err) {
-        res.status(400).json({ error: err.message });
+        console.log(err.message );
+        process.exit();
       } else if (!result.rowCount) {
-        res.json({
-          message: 'Employee not found'
-        });
+        console.log('Employee not found');
+        process.exit();
       } else {
         res.json({
           message: `Updated employee's role`,
@@ -297,7 +324,6 @@ const putEmp = function() {
         askQuestions();
       }
     });
-  });
 };
 
 function askQuestions() {
