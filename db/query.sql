@@ -6,7 +6,7 @@ SELECT
    CONCAT (manager.first_name+ " " + manager.last_name) AS manager
 FROM employees
 LEFT JOIN roles ON roles.id = employees.id
-LEFT JOIN departments ON department.dept_name = role.department
+LEFT JOIN departments ON departments.id = role.department
 LEFT JOIN employees AS manager ON employee.manager = manager.id
 
 

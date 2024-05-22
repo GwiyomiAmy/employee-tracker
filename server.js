@@ -1,12 +1,12 @@
-const express = require('express');
+// const express = require('express');
 const { Pool } = require('pg');
 const inquirer = require("inquirer");
 
-const app = express();
+// const app = express();
 
 // Express middleware
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+// app.use(express.urlencoded({ extended: false }));
+// app.use(express.json());
 
 const pool = new Pool(
   {
@@ -39,7 +39,7 @@ const menu = [
 ];
 
 // inquire prompts to add role
-const addRole =[
+const addRoleQs =[
   {
     type: "input",
     message: "What is the name of the role?",
@@ -54,12 +54,12 @@ const addRole =[
     type:"list",
     message: "Which department does the role belong to?",
     name: "roleDept",
-    choices: [`SELECT * FROM departments`] //GET from department db
+    choices: [] //GET from department db
   }
 ];
 
 // inquirer prompts to add department
-const addDept = 
+const addDeptQs = 
 [
   {
     type: "input",
@@ -69,7 +69,7 @@ const addDept =
 ];
 
 // inquirer prompts to add employee
-const addEmp = 
+const addEmpQs = 
 [
   {
     type: "input",
@@ -96,7 +96,7 @@ const addEmp =
 ];
 
 // inquirer prompts to update employee
-const updateEmp = 
+const updateEmpQs = 
 [
   {
     type:"list",
@@ -114,129 +114,166 @@ const updateEmp =
 
 // GET and display roles table
 const displayRoles = function() {
-  app.get('/api/roles', (req, res) => {
-    const sql = `SELECT * FROM roles`
+    const sql = `SELECT roles.*, departments.dept_name FROM roles
+    LEFT JOIN departments ON departments.id = roles.department`
     //`SELECT id, title, dept_name AS department FROM departments, salary`
     ;
-  
-    pool.query(sql, (err, { rows }) => {
+    pool.query(sql, (err, response) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({
-        message: 'success',
-        data: rows
-      });
+      //console.log(response.rows);
+      const roles = response.rows;
+      for (let i=0; i<roles.length; i++) {
+        console.log(roles[i].title + " - $" + roles[i].salary + " - Dept: " + roles[i].dept_name);
+      };
       askQuestions();
     });
-  });
 };
 
 // GET and display departments table
 const displayDepts = function() {
-  app.get('/api/departments', (req, res) => {
     const sql = `SELECT * FROM departments`
-    //`SELECT id, dept_name AS department FROM departments`
-    ;
-  
-    pool.query(sql, (err, { rows }) => {
+    pool.query(sql, (err, response) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({
-        message: 'success',
-        data: rows
-      });
+      const depts = response.rows;
+      for (let i=0; i<depts.length; i++) {
+        console.log(" Dept: " + depts[i].dept_name);
+      };
       askQuestions();
     });
-  });
 };
 
 // GET and display employee table
 const displayEmployees = function(){
-  app.get('/api/employees', (req, res) => {
     const sql = `SELECT * FROM employees`
-    //`SELECT employees.id, employees.first_name AS first name, employees.last_name AS last name, roles.title FROM roles AS title, departments.dept_name FROM departments AS department, roles.salary FROM roles AS salary, employees.manager`
-    ;
-    pool.query(sql, (err, { rows }) => {
+    pool.query(sql, (err, response) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({
-        message: 'success',
-        data: rows
-      });
+      console.log(response.rows);
       askQuestions();
     });
+};
+
+//add role
+const addRole = function() {
+  addRoleQs[2].choices = [];
+  const sql = `SELECT * FROM departments`;
+  pool.query(sql, (err, response) => {
+    if (err) {
+      console.log(err.message);
+      return;
+    }
+    const role_table = response.rows;
+    let roles  = [];
+    for (let i = 0; i < role_table.length; i++) {
+      roles[i] = role_table[i].dept_name;
+    }
+    addRoleQs[2].choices = roles;
+    inquirer.prompt(addRoleQs).then((response) => {
+      //console.log(response);
+      
+      for (let i = 0; i < role_table.length; i++) {
+        if(response.roleDept = role_table[i].dept_name) {
+          response.roleDept = role_table[i].id;
+          break;
+        }
+      }
+      postRoles(response);
+    }); 
   });
+  
 };
 
 // POST to roles table
-const postRoles = function() {
-  app.post('/api/roles', ({ body }, res) => {
-  const sql = `INSERT INTO roles (titles, department, salary)
-    VALUES ($1)`;
-  const params = [body];
-
+const postRoles = function(response) {
+  const sql = `INSERT INTO roles (title, department, salary)
+    VALUES ($1, $2, $3)`;
+  const params = [ response.role, parseInt(response.roleDept), parseInt(response.salary) ];
+  //console.log(response);
+  //console.log(params);
+  //process.exit();
+  // params should have [ "Role Title", 3, 100000 ];
   pool.query(sql, params, (err, result) => {
     if (err) {
-      res.status(400).json({ error: err.message });
-      return;
+      console.log(err.message);
+      process.exit();
     }
-    res.json({
-      message: 'Added role to the database',
-      data: body
-     });
      askQuestions();
    });
 
- });
 };
+
+
+const addDept = function() {
+    inquirer.prompt(addDeptQs).then((response) => {
+      postDept(response);
+    });
+    };
 
 // POST to departments table
-const postDept = function() {
-  app.post('/api/department', ({ body }, res) => {
+const postDept = function(response) {
     const sql = `INSERT INTO departments (dept_name)
       VALUES ($1)`;
-    const params = [body];
+    const params = [response.dept];
   
     pool.query(sql, params, (err, result) => {
       if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+        console.log(err.message );
+        process.exit();
       }
-      res.json({
-        message: 'Added department to the database',
-        data: body
-      });
       askQuestions();
     });
-  });
-};
+  };
 
+const addEmp = function(){
+  addEmpQs[2].choices = [];
+  const sql = `SELECT * FROM roles`;
+  pool.query(sql, (err, response) => {
+    if (err) {
+      console.log(err.message);
+      return;
+    }
+    const emp_table = response.rows;
+    let emps  = [];
+    for (let i = 0; i < emp_table.length; i++) {
+      emps[i] = emp_table[i].title;
+    }
+    addEmpQs[2].choices = emps;
+    inquirer.prompt(addEmpQs).then((response) => {
+      //console.log(response);
+      
+      for (let i = 0; i < emp_table.length; i++) {
+        if(response.empRole = emp_table[i].title) {
+          response.empRole = emp_table[i].id;
+          break;
+        }
+      }
+      postEmp(response);
+    }); 
+  });
+
+}
 // POST to employees table
-const postEmp = function() {
-  app.post('/api/employee', ({ body }, res) => {
-    const sql = `INSERT INTO employees (first_name, last_name, title, department, salary, manager)
-      VALUES ($1)`;
-    const params = [body];
+const postEmp = function(response) {
+    const sql = `INSERT INTO employees (first_name, last_name, employee_title, manager_id)
+      VALUES ($1, $2, $3, $4)`;
+    const params = [response.fname, response.lname, parseInt(response.empRole), parseInt(response.manager)];
   
     pool.query(sql, params, (err, result) => {
       if (err) {
-        res.status(400).json({ error: err.message });
-        return;
+        console.log(err.message);
+        process.exit();
       }
-      res.json({
-        message: 'Added employee to the database',
-        data: body
-      });
       askQuestions();
     });
-  });
-};
+  };
 
 // PUT to employees table
 const putEmp = function() {
@@ -267,35 +304,25 @@ function askQuestions() {
   inquirer.prompt(menu).then((response) => {
     if(response.first === "View All Roles") {
       displayRoles();
-      askQuestions();
     } else if(response.first === "View All Departments") {
       displayDepts();
-      askQuestions();
     } else if (response.first === "View All Employees") {
       displayEmployees();
-      askQuestions();
     } else if (response.first === "Add Role") {
-      inquirer.prompt(addRole).then((response) => {
-        postRoles(response);
-      }); 
+      addRole();
     } else if(response.first === "Add Department") {
-      inquirer.prompt(addDept).then((response) => {
-        postDept(response);
-      }); 
+      addDept();
     } else if(response.first === "Add Employee") {
-      inquirer.prompt(addEmp).then((response) => {
-        postEmp(response);
-      }); 
+      addEmp();
     } else if(response.first === "Update Employee Role") {
       inquirer.prompt(updateEmp).then((response) => {
         putEmp(response);
+        askQuestions();
       }); 
     } else if(response.first === "Quit") {
       inquirer.prompt.ui.close();
     } else {
-      app.use((req, res) => {
-        res.status(404).end();
-      });
+      console.log("How did you ask that question?");
     }
   })
 };
