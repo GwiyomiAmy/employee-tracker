@@ -320,7 +320,7 @@ function askQuestions() {
         askQuestions();
       }); 
     } else if(response.first === "Quit") {
-      inquirer.prompt.ui.close();
+      process.exit();
     } else {
       console.log("How did you ask that question?");
     }
