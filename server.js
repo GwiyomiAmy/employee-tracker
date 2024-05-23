@@ -86,13 +86,17 @@ const addEmpQs =
     message: "What is the employee's role?",
     name: "empRole",
     choices: [] //GET from role db
- },
- {
-   type:"list",
-   message: "Who is the employee's manager?",
-   name: "manager",
-   choices: [ ] //GET from employee/manager db
-}
+ }
+];
+
+const addManager =
+[
+  {
+    type:"list",
+    message: "Who is the employee's manager?",
+    name: "manager",
+    choices: [ ] //GET from employee/manager db
+ }
 ];
 
 // inquirer prompts to update employee
@@ -180,7 +184,8 @@ const addRole = function() {
       //console.log(response);
       
       for (let i = 0; i < role_table.length; i++) {
-        if(response.roleDept = role_table[i].dept_name) {
+        if(response.roleDept == role_table[i].dept_name) {
+          console.log(role_table[i])
           response.roleDept = role_table[i].id;
           break;
         }
@@ -193,6 +198,7 @@ const addRole = function() {
 
 // POST to roles table
 const postRoles = function(response) {
+  console.log("response", response)
   const sql = `INSERT INTO roles (title, department, salary)
     VALUES ($1, $2, $3)`;
   const params = [ response.role, parseInt(response.roleDept), parseInt(response.salary) ];
@@ -262,17 +268,43 @@ const addEmp = function(){
 }
 // POST to employees table
 const postEmp = function(response) {
-    const sql = `INSERT INTO employees (first_name, last_name, employee_title, manager_id)
-      VALUES ($1, $2, $3, $4)`;
-    const params = [response.fname, response.lname, parseInt(response.empRole), parseInt(response.manager)];
-  
-    pool.query(sql, params, (err, result) => {
+    const sql1 = `SELECT * FROM employees`;
+    pool.query(sql1, (err, empResponse) => {
       if (err) {
         console.log(err.message);
-        process.exit();
+        return;
       }
-      askQuestions();
+      const emp_table = empResponse.rows;
+      emp_table.unshift({manger_id:null})
+      console.log(emp_table)
+      let emps  = [];
+      for (let i = 0; i < emp_table.length; i++) {
+        emps[i] = emp_table[i].first_name + emp_table[i].last_name;
+      }
+      addManager[0].choices = emps;
+      inquirer.prompt(addManager).then((empResponse) => {
+        //console.log(empResponse);
+        
+        for (let i = 0; i < emp_table.length; i++) {
+          if(empResponse.empRole == emp_table[i].first_name + emp_table[i].last_name) {
+            empResponse.empRole = emp_table[i].id;
+            break;
+          }
+        }
+        const sql = `INSERT INTO employees (first_name, last_name, employee_title, manager_id)
+        VALUES ($1, $2, $3, $4)`;
+        const params = [response.fname, response.lname, parseInt(response.empRole), parseInt(empResponse.manager)];
+    
+        pool.query(sql, params, (err, result) => {
+          if (err) {
+            console.log(err.message);
+            process.exit();
+          }
+          askQuestions();
+        });
+      }); 
     });
+    
   };
 
 const updateEmp = function(){
@@ -293,12 +325,12 @@ const updateEmp = function(){
       //console.log(response);
       
       for (let i = 0; i < emp_table.length; i++) {
-        if(response.empRole = emp_table[i].title) {
+        if(response.empRole == emp_table[i].title) {
           response.empRole = emp_table[i].id;
           break;
         }
       }
-      postEmp(response);
+      putEmp(response);
     }); 
   });
 };
