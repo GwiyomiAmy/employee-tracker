@@ -118,9 +118,8 @@ const updateEmpQs =
 
 // GET and display roles table
 const displayRoles = function() {
-    const sql = `SELECT roles.*, departments.dept_name FROM roles
+    const sql = `SELECT roles.title, roles.salary, departments.dept_name AS department FROM roles
     LEFT JOIN departments ON departments.id = roles.department`
-    //`SELECT id, title, dept_name AS department FROM departments, salary`
     ;
     pool.query(sql, (err, response) => {
       if (err) {
@@ -129,38 +128,35 @@ const displayRoles = function() {
       }
       //console.log(response.rows);
       const roles = response.rows;
-      for (let i=0; i<roles.length; i++) {
-        console.log(roles[i].title + " - $" + roles[i].salary + " - Dept: " + roles[i].dept_name);
-      };
+      console.table(roles)
       askQuestions();
     });
 };
 
 // GET and display departments table
 const displayDepts = function() {
-    const sql = `SELECT * FROM departments`
+    const sql = `SELECT departments.dept_name AS departments FROM departments`
     pool.query(sql, (err, response) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
       const depts = response.rows;
-      for (let i=0; i<depts.length; i++) {
-        console.log(" Dept: " + depts[i].dept_name);
-      };
+      console.table(depts)
       askQuestions();
     });
 };
 
 // GET and display employee table
 const displayEmployees = function(){
-    const sql = `SELECT * FROM employees`
+    const sql = `SELECT employees.first_name, employees.last_name, roles.title, departments.dept_name AS department, roles.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager  FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments ON roles.department = departments.id LEFT JOIN employees manager ON manager.id = employees.manager_id`
     pool.query(sql, (err, response) => {
       if (err) {
-        res.status(500).json({ error: err.message });
+        console.log(err.message );
         return;
       }
-      console.log(response.rows);
+      const emps = response.rows;
+      console.table(emps)
       askQuestions();
     });
 };
@@ -256,7 +252,7 @@ const addEmp = function(){
       //console.log(response);
       
       for (let i = 0; i < emp_table.length; i++) {
-        if(response.empRole = emp_table[i].title) {
+        if(response.empRole == emp_table[i].title) {
           response.empRole = emp_table[i].id;
           break;
         }
@@ -266,6 +262,20 @@ const addEmp = function(){
   });
 
 }
+
+const getRole = function(id) {
+  const sql = `SELECT * FROM roles WHERE id = $1`;
+  const params = [id];
+    pool.query(sql, params, (err, response) => {
+      if (err) {
+        console.log(err.message);
+        return;
+      }
+      console.log("getRole(): ", response)
+      return response;
+    })
+};
+
 // POST to employees table
 const postEmp = function(response) {
     const sql1 = `SELECT * FROM employees`;
@@ -276,7 +286,7 @@ const postEmp = function(response) {
       }
       const emp_table = empResponse.rows;
       emp_table.unshift({manger_id:null})
-      console.log(emp_table)
+      //console.log(emp_table)
       let emps  = [];
       for (let i = 0; i < emp_table.length; i++) {
         emps[i] = emp_table[i].first_name + emp_table[i].last_name;
@@ -291,9 +301,13 @@ const postEmp = function(response) {
             break;
           }
         }
-        const sql = `INSERT INTO employees (first_name, last_name, employee_title, manager_id)
+        const sql = `INSERT INTO employees (first_name, last_name, role_id, manager_id)
         VALUES ($1, $2, $3, $4)`;
         const params = [response.fname, response.lname, parseInt(response.empRole), parseInt(empResponse.manager)];
+        console.log(response.fname);
+        console.log(response.lname);
+        console.log(response.empRole);
+        console.log(empResponse.manager)
     
         pool.query(sql, params, (err, result) => {
           if (err) {
@@ -380,7 +394,7 @@ function askQuestions() {
     } else if(response.first === "Quit") {
       process.exit();
     } else {
-      console.log("How did you ask that question?");
+      console.log("What did you do? That wasn't even an option.");
     }
   })
 };
