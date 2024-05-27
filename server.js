@@ -289,7 +289,11 @@ const postEmp = function(response) {
       //console.log(emp_table)
       let emps  = [];
       for (let i = 0; i < emp_table.length; i++) {
-        emps[i] = emp_table[i].first_name + emp_table[i].last_name;
+        emps[i] = {
+          value: emp_table[i].id,
+          name: emp_table[i].first_name + " " + emp_table[i].last_name
+        };
+        //emp_table[i].first_name + emp_table[i].last_name;
       }
       addManager[0].choices = emps;
       inquirer.prompt(addManager).then((empResponse) => {
@@ -321,56 +325,57 @@ const postEmp = function(response) {
     
   };
 
-const updateEmp = function(){
-  updateEmpQs[0].choices = [];
-  const sql = `SELECT * FROM employees`;
-  pool.query(sql, (err, response) => {
-    if (err) {
-      console.log(err.message);
-      return;
-    }
-    const emp_table = response.rows;
-    let emps  = [];
-    for (let i = 0; i < emp_table.length; i++) {
-      emps[i] = emp_table[i].fname, emp_table[i].lname;
-    }
-    addEmpQs[2].choices = emps;
-    inquirer.prompt(addEmpQs).then((response) => {
-      //console.log(response);
+// const updateEmp = function(){
+//   updateEmpQs[0].choices = [];
+//   const sql = `SELECT * FROM employees`;
+//   pool.query(sql, (err, response) => {
+//     if (err) {
+//       console.log(err.message);
+//       return;
+//     }
+//     const emp_table = response.rows;
+//     let emps  = [];
+//     for (let i = 0; i < emp_table.length; i++) {
+//       emps[i] = emp_table[i].fname, emp_table[i].lname;
+//     }
+//     addEmpQs[2].choices = emps;
+//     inquirer.prompt(addEmpQs).then((response) => {
+//       //console.log(response);
       
-      for (let i = 0; i < emp_table.length; i++) {
-        if(response.empRole == emp_table[i].title) {
-          response.empRole = emp_table[i].id;
-          break;
-        }
-      }
-      putEmp(response);
-    }); 
-  });
-};
+//       for (let i = 0; i < emp_table.length; i++) {
+//         if(response.empRole == emp_table[i].title) {
+//           response.empRole = emp_table[i].id;
+//           break;
+//         }
+//       }
+//       putEmp(response);
+//     }); 
+//   });
+// };
 
 // PUT to employees table
-const putEmp = function() {
-    const sql = `UPDATE employees SET employee = $1 WHERE id = $2`;
-    const params = [req.body];
+// const putEmp = function() {
+//     const sql = `UPDATE employees SET employee = $1 WHERE id = $2`;
+//     pool.query(sql, params, (err, result) => {
+//       if (err) {
+//         console.log(err.message );
+//         process.exit();
+//       } else if (!result.rowCount) {
+//         console.log('Employee not found');
+//         process.exit();
+//       } else {
+        
+        
+//       }
+
+
+    
+//     const params = [response];
   
-    pool.query(sql, params, (err, result) => {
-      if (err) {
-        console.log(err.message );
-        process.exit();
-      } else if (!result.rowCount) {
-        console.log('Employee not found');
-        process.exit();
-      } else {
-        res.json({
-          message: `Updated employee's role`,
-          data: req.body,
-          changes: result.rowCount
-        });
-        askQuestions();
-      }
-    });
-};
+    
+//       askQuestions();
+//     });
+// };
 
 function askQuestions() {
   inquirer.prompt(menu).then((response) => {
@@ -387,10 +392,8 @@ function askQuestions() {
     } else if(response.first === "Add Employee") {
       addEmp();
     } else if(response.first === "Update Employee Role") {
-      inquirer.prompt(updateEmp).then((response) => {
-        putEmp(response);
-        askQuestions();
-      }); 
+      console.log("Unable to update employee at this time. Please try another action.")
+      askQuestions()
     } else if(response.first === "Quit") {
       process.exit();
     } else {
